@@ -30,8 +30,31 @@ noteIDcounter = getLastID()
 	
 def addFile(login, userFile):
     conn, cursor = connect()
+    file = open(userFile, 'rb')
+    data = file.read()
+    cursor.execute("select file from files where login=\'"+ login + "\';")
+    result = cursor.fetchone()
+    if result == None:
+        cursor.execute("insert into files values(\'"+login+"\',\'"+data+"\');")
+    else:
+        cursor.execute("update files set file=\'"+data+"\' where login=\'" + login +"\';")
+    conn.commit()   
     conn.close()
-    return 0
+    return True
+
+def getUserFile(login):
+    conn, cursor = connect()
+    cursor.execute("select file from files where login=\'"+ login + "\';")
+    result = cursor.fetchone()
+    conn.close()
+    if result == None:
+	    return None
+    else:
+        file = open('result', 'w')
+        file.write(str(result[0]))
+        file.close()
+        return file
+    
 def addNote(noteID, login, note):
     conn, cursor = connect()
     try:
@@ -58,11 +81,6 @@ def getUserNotes(login):
     except sqlite3.IntegrityError:
         return []
 	
-def getUserFile( login ):
-    conn, cursor = connect()
-    conn.close()
-    return 0
-	
 def getUserInformation(login):
     conn, cursor = connect()
     cursor.execute("select * from users where login=\'"+login+"\';")
@@ -82,13 +100,23 @@ def checkPassword( login, password):
 	
 def addErrorLog( date, message):
     conn, cursor = connect()
+    try:
+        cursor.execute("insert into aplicationLogs values(\'"+date+"\',\'"+message+"\');")
+    except sqlite3.IntegrityError:
+        return False
+    conn.commit()
     conn.close()
-    return 0
+    return True
 	
 def addLog( date, message):
     conn, cursor = connect()
+    try:
+        cursor.execute("insert into aplicationErrorLogs values(\'"+date+"\',\'"+message+\');")
+    except sqlite3.IntegrityError:
+        return False
+    conn.commit()
     conn.close()
-    return 0
+    return True
 	
 def checkIfLoginIsFree(login):
     conn, cursor = connect()
@@ -109,4 +137,4 @@ def addUserToDB( login, password, email, name, surname):
     conn.close()
     return True
 if __name__ == "__main__":
-    print getUserInformation('python')
+
