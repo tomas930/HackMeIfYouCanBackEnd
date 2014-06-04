@@ -144,4 +144,3 @@ def addUserToDB( login, password, email, name, surname):
     conn.close()
     return True
 if __name__ == "__main__":
-    sendMail("tomas930@vp.pl", "test", "hello")
