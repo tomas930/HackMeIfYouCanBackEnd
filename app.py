@@ -6,8 +6,19 @@ from gevent.pywsgi import WSGIServer
 import time
 import os
 import sqlite3
+import mail
+from mail import *
 
 database = "database.db"
+
+def sendMail(sendTo, topic, message):
+    sender = mail()
+    f = open('msgFile', 'wb')
+    f.write(message)
+    f.close()
+    sender.send(sendTo, 'msgFile', topic)
+    os.remove('msgFile')
+    return 0
 
 def connect():
     conn = sqlite3.connect(database)
@@ -111,7 +122,7 @@ def addErrorLog( date, message):
 def addLog( date, message):
     conn, cursor = connect()
     try:
-        cursor.execute("insert into aplicationErrorLogs values(\'"+date+"\',\'"+message+\');")
+        cursor.execute("insert into aplicationErrorLogs values(\'"+date+"\',\'"+message+"\');")
     except sqlite3.IntegrityError:
         return False
     conn.commit()
@@ -137,4 +148,4 @@ def addUserToDB( login, password, email, name, surname):
     conn.close()
     return True
 if __name__ == "__main__":
-
+    sendMail("tomas930@vp.pl", "test", "hello")
