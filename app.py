@@ -13,11 +13,7 @@ database = "database.db"
 
 def sendMail(sendTo, topic, message):
     sender = mail()
-    f = open('msgFile', 'wb')
-    f.write(message)
-    f.close()
-    sender.send(sendTo, 'msgFile', topic)
-    os.remove('msgFile')
+    sender.send(sendTo, message, topic)
     return 0
 
 def connect():
