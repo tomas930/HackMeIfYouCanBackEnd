@@ -23,7 +23,7 @@ class dbConnector:
 		
     def getSalt(self, login):
         conn, cursor = connect()
-        cursor.execute("select salt from slats where login=\'"+ login + "\';")
+        cursor.execute("select salt from salts where login=\'"+ login + "\';")
         result = cursor.fetchone()
         conn.close()
 
@@ -41,14 +41,14 @@ class dbConnector:
                 lastID = tmp
         return lastID
 		
-    def addFile(self,login, userFile):
+    def addFile(self,login, userFile, extension):
         conn, cursor = connect()
         file = open(userFile, 'rb')
         data = file.read()
         cursor.execute("select file from files where login=\'"+ login + "\';")
         result = cursor.fetchone()
         if result == None:
-            cursor.execute("insert into files values(\'"+login+"\',\'"+data+"\');")
+            cursor.execute("insert into files values(\'"+login+"\',\'"+data+"\',\'" +extension+"\');")
         else:
             cursor.execute("update files set file=\'"+data+"\' where login=\'" + login +"\';")
         conn.commit()   
@@ -59,11 +59,13 @@ class dbConnector:
         conn, cursor = connect()
         cursor.execute("select file from files where login=\'"+ login + "\';")
         result = cursor.fetchone()
+        cursor.execute("select extension from files where login=\'"+ login + "\';")
+        extension = cursor.fetchone()
         conn.close()
         if result == None:
 	        return None
         else:
-            file = open('result', 'w')
+            file = open('toDownload.' + extension, 'w')
             file.write(str(result[0]))
             file.close()
             return file
@@ -79,6 +81,16 @@ class dbConnector:
         noteIDcounter += 1
         return True
 	
+    def updateUserPassword(self, login, password):
+        conn, cursor = connect()
+        try:
+            cursor.execute('update users set assword=\''+password+'\' where login=\''+login+'\';')
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+		return True
+		
     def getUserNotes(self,login):
         conn, cursor = connect() 
         try:
