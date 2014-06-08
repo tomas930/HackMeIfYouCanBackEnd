@@ -1,6 +1,6 @@
 import sqlite3
 
-database = "database.db"
+database = "/home/stud/okraskat/database/database.db"
 
 def connect():
     conn = sqlite3.connect(database)
@@ -11,6 +11,24 @@ class dbConnector:
     def __init__(self):
         return
     		
+    def setSalt(self, login, salt):
+        conn, cursor = connect()
+        try:
+            cursor.execute("insert into salts values(\'"+login+"\',\'"+salt+"\');")
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return True
+		
+    def getSalt(self, login):
+        conn, cursor = connect()
+        cursor.execute("select salt from slats where login=\'"+ login + "\';")
+        result = cursor.fetchone()
+        conn.close()
+
+        
+		
     def getLastID(self):
         conn, cursor = connect()
         cursor.execute("select id from notes;")
@@ -131,3 +149,4 @@ class dbConnector:
         conn.commit()
         conn.close()
         return True
+
