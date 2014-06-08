@@ -14,7 +14,8 @@ class dbConnector:
     def setSalt(self, login, salt):
         conn, cursor = connect()
         try:
-            cursor.execute("insert into salts values(\'"+login+"\',\'"+salt+"\');")
+            com = "insert into salts values(? ,?)"
+            cursor.execute(com, (login, salt,))
         except Exception:
             return False
         conn.commit()
@@ -23,10 +24,11 @@ class dbConnector:
 		
     def getSalt(self, login):
         conn, cursor = connect()
-        cursor.execute("select salt from salts where login=\'"+ login + "\';")
+        com = "select salt from salts where login=?"
+        cursor.execute(com, (login,))
         result = cursor.fetchone()
         conn.close()
-
+        return result
         
 		
     def getLastID(self):
@@ -45,21 +47,26 @@ class dbConnector:
         conn, cursor = connect()
         file = open(userFile, 'rb')
         data = file.read()
-        cursor.execute("select file from files where login=\'"+ login + "\';")
+        com = "select file from files where login=?;"
+        cursor.execute(com, (login,))
         result = cursor.fetchone()
         if result == None:
-            cursor.execute("insert into files values(\'"+login+"\',\'"+data+"\',\'" +extension+"\');")
+            com = "insert into files values( ?, ?, ?);"
+            cursor.execute(com, (login, data, extension,))
         else:
-            cursor.execute("update files set file=\'"+data+"\' where login=\'" + login +"\';")
+            com = "update files set file=? where login=?;"
+            cursor.execute(com, (data, login,))
         conn.commit()   
         conn.close()
         return True
 
     def getUserFile(self,login):
         conn, cursor = connect()
-        cursor.execute("select file from files where login=\'"+ login + "\';")
+        com = "select file from files where login=?;"
+        cursor.execute(com, (login,))
         result = cursor.fetchone()
-        cursor.execute("select extension from files where login=\'"+ login + "\';")
+        com = "select extension from files where login=?;"
+        cursor.execute(com, (login,))
         extension = cursor.fetchone()
         conn.close()
         if result == None:
@@ -73,7 +80,8 @@ class dbConnector:
     def addNote(self,noteID, login, note):
         conn, cursor = connect()
         try:
-            cursor.execute("insert into notes values(\'"+noteID+"\',\'"+login+"\',\'"+note+"\');")
+            com = "insert into notes values(?, ?, ?);"
+            cursor.execute(com, (noteID, login, note,))
         except sqlite3.IntegrityError:
             return False
         conn.commit()
@@ -84,17 +92,19 @@ class dbConnector:
     def updateUserPassword(self, login, password):
         conn, cursor = connect()
         try:
-            cursor.execute('update users set assword=\''+password+'\' where login=\''+login+'\';')
+            com = 'update users set password=? where login=?;'
+            cursor.execute(com, (password, login,))
         except Exception:
             return False
         conn.commit()
         conn.close()
-		return True
+        return True
 		
     def getUserNotes(self,login):
         conn, cursor = connect() 
         try:
-            cursor.execute("select note from notes where login=\'"+login+"\';")
+            com = 'select note from notes where login=?'
+            cursor.execute(com, (login,))
             rows = cursor.fetchall()
             if len(rows) == 0:
                 return []
@@ -108,14 +118,16 @@ class dbConnector:
 	
     def getUserInformation(self,login):
         conn, cursor = connect()
-        cursor.execute("select * from users where login=\'"+login+"\';")
+        com = "select * from users where login=?;"
+        cursor.execute(com, (login,))
         info = cursor.fetchone()
         conn.close()
         return info
 	
     def checkPassword(self, login, password):
         conn, cursor = connect()
-        cursor.execute('select password from users where login=\'' + login + "\';")
+        com = 'select password from users where login=?;'
+        cursor.execute(com, (login,))
         result = cursor.fetchone()
         conn.close()
         result = result[0]
@@ -126,7 +138,8 @@ class dbConnector:
     def addErrorLog(self, date, message):
         conn, cursor = connect()
         try:
-            cursor.execute("insert into aplicationLogs values(\'"+date+"\',\'"+message+"\');")
+            com = "insert into aplicationLogs values(? ,?);"
+            cursor.execute(com, (date, message,))
         except sqlite3.IntegrityError:
             return False
         conn.commit()
@@ -136,7 +149,8 @@ class dbConnector:
     def addLog( self,date, message):
         conn, cursor = connect()
         try:
-            cursor.execute("insert into aplicationErrorLogs values(\'"+date+"\',\'"+message+"\');")
+            com = "insert into aplicationErrorLogs values(?, ?);"
+            cursor.execute(com, (date, message,))
         except sqlite3.IntegrityError:
             return False
         conn.commit()
@@ -145,7 +159,8 @@ class dbConnector:
 	
     def checkIfLoginIsFree(self,login):
         conn, cursor = connect()
-        cursor.execute("select login from users where login=\'"+login+"\';")
+        com = "select login from users where login=?;"
+        cursor.execute(com, (login,))
         rows = cursor.fetchone()
         conn.close()
         result = rows[0]
@@ -155,10 +170,13 @@ class dbConnector:
     def addUserToDB( self,login, password, email, name, surname):
         conn, cursor = connect()
         try:
-            cursor.execute("insert into users values(\'"+login+"\',\'"+password+"\',\'"+email+"\',\'"+name+"\',\'"+surname+"\');")
+            com = "insert into users values(?,?,?,?,?);"
+            cursor.execute(com, (login, password, email, name, surname,))
         except sqlite3.IntegrityError:
             return False
         conn.commit()
         conn.close()
         return True
-
+if __name__ == "__main__":
+    dbConnector = dbConnector()
+    print dbConnector.getSalt("test")
