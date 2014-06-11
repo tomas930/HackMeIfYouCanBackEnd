@@ -1,7 +1,10 @@
 # -*- coding: utf-8
 #!/usr/bin/python
 """A web.py application powered by gevent"""
+from eventlet import wsgi
+import eventlet
 from gevent.pywsgi import WSGIServer
+import sys
 import time
 import os
 import sqlite3
@@ -32,16 +35,8 @@ from sessionControler import *
 
 prefix = '/~okraskat/apps/safetyNote'
 
-urls = (prefix + '/notes/(.*)', 'Notes',
-        prefix + '/register/(.*)', 'Register',
-        prefix + '/login/(.*)', 'Login',
-        prefix + '/reset', 'ResetPassword',
-        prefix + "/upload", 'Upload',
-        prefix + '/(.*)', 'Index',		
-        )
-		
 web.config.debug = False
-app = web.application(urls, locals())
+app = web.application((), locals())
 
 session = SessionController(app)
 connector = dbConnector()
@@ -62,7 +57,7 @@ class Upload:
 
     def POST(self):
         x = web.input(myfile={})
-        file = open('/home/stud/~okraskat/database/tmp', 'w')
+        file = open('/home/stud/okraskat/database/tmp', 'w')
         file.write(x['myfile'].file.read())
         file.close()
         # TODO insert page address to redirect
@@ -146,12 +141,48 @@ class Notes:
             return json.dumps({ 'added' : False })
 
 			
-def sendMail(sendTo, topic, message):
+def sendMail(sendTo, message, topic):
     sender = mail()
     sender.send(sendTo, message, topic)
     return 0
 
+class Index:
+    def GET(self):	   
+        return ['Hello, World!\r\n']
+
+notes = 'Notes'
+reg = 'Register'
+login = 'Login'
+reset = 'ResetPassword'
+upload = 'Upload'
+index = 'Index'
+
+urls = {'/notes': notes,
+	'/register': reg,
+	'/login': login,
+	'/reset': reset,
+	'/upload': upload,
+	'/': index
+	}
+
+web.config.debug = False
+app = web.application(urls, locals())
+
+def hello(env, start_response):
+    cl = globals().get(urls[env['PATH_INFO']])()
+    tmp = getattr(cl,env['REQUEST_METHOD'])()
+    start_response('200 OK', [('Content-Type', 'text/html')])
+    return tmp
+#  r urls[env['PATH_INFO']]()[env['REQUEST_METHOD']](self)
+
+		#    if env['PATH_INFO'] != '/':
+		#        start_response('404 Not Found', [('Content-Type', 'text/plain')])
+#        return ['Not Found\r\n']
+#    start_response('200 OK', [('Content-Type', 'text/plain')])
+#    return ['Hello, World!\r\n']
 
 
-if __name__ == "__main__":
-    print ""
+wsgi.server(eventlet.wrap_ssl(eventlet.listen(('localhost', 8457)),certfile='/tmp/HMIUC/ssl/server.crt',keyfile='/tmp/HMIUC/ssl/server.key',server_side=True),hello)
+
+#if __name__ == "__main__":
+#    print ""
