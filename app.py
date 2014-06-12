@@ -33,17 +33,26 @@ from sessionControler import *
 # addUserToDB( self,login, password, email, name, surname):		return True
 
 
-prefix = '/~okraskat/apps/safetyNote'
+#prefix = 'localhost:8457'
+
+urls = ('/notes', 'Notes',
+'/register', 'Register',
+'/login', 'Login',
+'/reset', 'ResetPassword',
+'/upload', 'Upload',
+'/', 'Index',
+)
 
 web.config.debug = False
-app = web.application((), locals())
+app = web.application(urls, locals())
 
-session = SessionController(app)
+#session = SessionController(app)
 connector = dbConnector()
 
 noteIDcounter = connector.getLastID()
 passwordReset = ''
 badLoginCounter = 0
+
 
 class Upload:
     def GET(self):
@@ -62,15 +71,19 @@ class Upload:
         file.close()
         # TODO insert page address to redirect
         raise web.seeother('')
-		
+
 		
 class ResetPassword:
     def GET(self):
         data = web.data()
         data = json.loads(data)
+        print (data)
         info = connector.getUserInformation(data['login'])
         passwordReset = ''.join(random.sample(string.ascii_letters, 12))
         sendMail(info[2], 'Password reset', 'Yor password reset key is:' + passwordReset)
+        res.status = '200 OK'
+        res.cont = 'text/plain'
+        res.body = '0'
         return 0
     def POST(self):
         data = web.data()
@@ -99,7 +112,7 @@ class Login:
         logged = connector.checkPassword( login, password )
         response = {'logged' : logged}
         if logged == True:
-            session.setSession(login)
+            #session.setSession(login)
             web.setcookie('login', login, 3600, secure=True )
         else:
             if badLoginCounter == 5:
@@ -150,29 +163,11 @@ class Index:
     def GET(self):	   
         return ['Hello, World!\r\n']
 
-notes = 'Notes'
-reg = 'Register'
-login = 'Login'
-reset = 'ResetPassword'
-upload = 'Upload'
-index = 'Index'
-
-urls = {'/notes': notes,
-	'/register': reg,
-	'/login': login,
-	'/reset': reset,
-	'/upload': upload,
-	'/': index
-	}
-
-web.config.debug = False
-app = web.application(urls, locals())
-
-def hello(env, start_response):
-    cl = globals().get(urls[env['PATH_INFO']])()
-    tmp = getattr(cl,env['REQUEST_METHOD'])()
-    start_response('200 OK', [('Content-Type', 'text/html')])
-    return tmp
+#def hello(env, start_response):
+#    cl = globals().get(urls[env['PATH_INFO']])()
+#    tmp = getattr(cl,env['REQUEST_METHOD'])()
+#    start_response(tmp.status, [('Content-Type', tmp.cont)])
+#    return tmp.body
 #  r urls[env['PATH_INFO']]()[env['REQUEST_METHOD']](self)
 
 		#    if env['PATH_INFO'] != '/':
@@ -181,8 +176,8 @@ def hello(env, start_response):
 #    start_response('200 OK', [('Content-Type', 'text/plain')])
 #    return ['Hello, World!\r\n']
 
-
-wsgi.server(eventlet.wrap_ssl(eventlet.listen(('localhost', 8457)),certfile='/tmp/HMIUC/ssl/server.crt',keyfile='/tmp/HMIUC/ssl/server.key',server_side=True),hello)
+#if __name__ == "__main__":
+wsgi.server(eventlet.wrap_ssl(eventlet.listen(('localhost', 8457)),certfile='/tmp/HMIUC/ssl/server.crt',keyfile='/tmp/HMIUC/ssl/server.key',server_side=True),app.wsgifunc())
 
 #if __name__ == "__main__":
-#    print ""
+#    prin ""
