@@ -1,6 +1,6 @@
 import sqlite3
 
-database = "/home/stud/okraskat/database/database.db"
+database = "/home/stud/ficm/database/database.db"
 
 def connect():
     conn = sqlite3.connect(database)
@@ -28,7 +28,8 @@ class dbConnector:
         cursor.execute(com, (login,))
         result = cursor.fetchone()
         conn.close()
-        return result
+        print result[0]		
+        return result[0]
         
 		
     def getLastID(self):

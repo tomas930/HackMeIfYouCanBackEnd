@@ -2,7 +2,7 @@ import web
 
 class SessionController:
     def __init__(self, app):
-        db = web.database(dbn='sqlite', db='/home/stud/okraskat/database/database.db')
+        db = web.database(dbn='sqlite', db='/home/stud/ficm/database/database.db')
         store = web.session.DBStore(db, 'sessions')
         self.session = web.session.Session(app, store, initializer={'logged': False, 'login':None})
 

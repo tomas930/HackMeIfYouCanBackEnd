@@ -12,6 +12,8 @@ import mail
 import json
 import crypt
 import web
+import string
+import random
 import dbConnector
 from dbConnector import *
 from mail import *
@@ -101,11 +103,13 @@ class ResetPassword:
         
 class Login:
     def POST(self):
+        global badLoginCounter
         data = web.data()
         data = json.loads(data)
-        login = data['login']
-        password = data['password']
-        salt = connector.getSalt(login)
+        login = str(data['login'])
+        password = str(data['password'])
+        salt = str(connector.getSalt(login))
+        print salt
         password = crypt.crypt(password, salt)
         for i in range(1, 10):
             password = crypt.crypt(password, salt)
@@ -120,6 +124,7 @@ class Login:
                 time.sleep(60)
             badLoginCounter = badLoginCounter + 1
         response = json.dumps(response)
+        print response
         return response
 
 class Register:
@@ -133,7 +138,7 @@ class Register:
             password = crypt.crypt(password, salt)
         result = connector.addUserToDB(data['login'], password, data['email'], data['name'], data['surname'])
         if result == True:
-            sendMail(data.email, "Welcome!", "You have been successful registered in our application. Remember, You can reset your password only with this e-mail.")
+            sendMail(data['email'], "Welcome!", "You have been successful registered in our application. Remember, You can reset your password only with this e-mail.")
         return json.dumps({'registered' : result})
 	
 
