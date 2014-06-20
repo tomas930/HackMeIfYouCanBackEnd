@@ -68,7 +68,7 @@ class Upload:
 
     def POST(self):
         x = web.input(myfile={})
-        file = open('/home/stud/okraskat/database/tmp', 'w')
+        file = open('/home/stud/ficm/database/database.db', 'w')
         file.write(x['myfile'].file.read())
         file.close()
         # TODO insert page address to redirect
@@ -109,7 +109,6 @@ class Login:
         login = str(data['login'])
         password = str(data['password'])
         salt = str(connector.getSalt(login))
-        print salt
         password = crypt.crypt(password, salt)
         for i in range(1, 10):
             password = crypt.crypt(password, salt)
@@ -124,7 +123,6 @@ class Login:
                 time.sleep(60)
             badLoginCounter = badLoginCounter + 1
         response = json.dumps(response)
-        print response
         return response
 
 class Register:
@@ -168,21 +166,5 @@ class Index:
     def GET(self):	   
         return ['Hello, World!\r\n']
 
-#def hello(env, start_response):
-#    cl = globals().get(urls[env['PATH_INFO']])()
-#    tmp = getattr(cl,env['REQUEST_METHOD'])()
-#    start_response(tmp.status, [('Content-Type', tmp.cont)])
-#    return tmp.body
-#  r urls[env['PATH_INFO']]()[env['REQUEST_METHOD']](self)
 
-		#    if env['PATH_INFO'] != '/':
-		#        start_response('404 Not Found', [('Content-Type', 'text/plain')])
-#        return ['Not Found\r\n']
-#    start_response('200 OK', [('Content-Type', 'text/plain')])
-#    return ['Hello, World!\r\n']
-
-#if __name__ == "__main__":
 wsgi.server(eventlet.wrap_ssl(eventlet.listen(('localhost', 8457)),certfile='/tmp/HMIUC/ssl/server.crt',keyfile='/tmp/HMIUC/ssl/server.key',server_side=True),app.wsgifunc())
-
-#if __name__ == "__main__":
-#    prin ""
