@@ -10,26 +10,68 @@ def connect():
 class dbConnector:
     def __init__(self):
         return
-    		
-    def loginFree(self, login):
-        return 0
 		
     def emailFree(self, email):
-        return 0
+        conn, cursor = connect()
+        com = "select email from users where email=?"
+        cursor.execute(com, (email,))
+        result = cursor.fetchone()
+        conn.close()
+        return result == None
 
     def getLoginByResetKey(self, key):
-        return 0
+        conn, cursor = connect()
+        com = "select login from resetPassword where resetKey=?"
+        cursor.execute(com, (key,))
+        result = cursor.fetchone()
+        conn.close()
+        if result == None:
+            return None
+        else:
+            return result[0]
 
     def enableResetPassword(self, login):
-        return 0
+        conn, cursor = connect()
+        try:
+            com = "update resetPassword set canReset=\'true\' where login=?"
+            cursor.execute(com, (login,))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return True
 		
     def addResetKey(self, login, key):
-        return 0
-    def canResetpassword(self, login):
-        return 0
+        conn, cursor = connect()
+        try:
+            com = "insert into resetPassword values (?,?,?)"
+            cursor.execute(com, (login,key,'false'))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return True
+    def canResetPassword(self, login):
+        conn, cursor = connect()
+        com = "select canReset from resetPassword where login=?"
+        cursor.execute(com, (login,))
+        result = cursor.fetchone()
+        conn.close()
+        if result[0] == 'false':
+            return False
+        return True
 
     def disableResetPassword(self, login):
-        return 0
+        conn, cursor = connect()
+        try:
+            com = "update resetPassword set canReset=\'false\' where login=?"
+            cursor.execute(com, (login,))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return True
+
     def setSalt(self, login, salt):
         conn, cursor = connect()
         try:
@@ -199,4 +241,5 @@ class dbConnector:
         return True
 if __name__ == "__main__":
     dbConnector = dbConnector()
-    print dbConnector.getSalt("test")
+    dbConnector.addResetKey('test', 'dasd')
+    print dbConnector.canResetPassword("test")
