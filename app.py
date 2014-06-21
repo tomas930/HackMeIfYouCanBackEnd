@@ -38,7 +38,7 @@ import cookielib
 
 #prefix = 'localhost:8457'
 
-urls = ('/notes', 'Notes',
+urls = ('/notes/(.*)', 'Notes',
 '/register', 'Register',
 '/login', 'Login',
 '/reset', 'ResetPassword',
@@ -84,17 +84,15 @@ class Reseter:
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
         return opener.open('https://len.iem.pw.edu.pl:4443/redirect.html')
 class ResetPassword:
-    def GET(self):
-        data = web.data()
-        data = json.loads(data)
-        print (data)
-        info = connector.getUserInformation(data['login'])
+    def GET(self, arg):
+        login = arg
+        info = connector.getUserInformation(login)
         passwordReset = ''.join(random.sample(string.ascii_letters, 24))
         m = hashlib.sha256()
         m.update(passwordReset)
         passwordReset = m.hexdigest()
         passwordReset = "https://volt.iem.pw.edu.pl:7777/resetKey/" + passwordReset
-        connector.addResetKey(data['login'], passwordReset)
+        connector.addResetKey(login, passwordReset)
         sendMail(info[2], 'Password reset', 'To reset your password please click this link:\n' + passwordReset)
         res.status = '200 OK'
         res.cont = 'text/plain'
@@ -176,10 +174,8 @@ class Register:
 	
 
 class Notes:
-    def GET(self):
-        data = web.data()
-        data = json.loads(data)
-        result = connector.getUserNotes(data['login'])
+    def GET(self, arg):
+        result = connector.getUserNotes(str(arg))
         return json.dumps(result)
     def POST(self):
         data = web.data()
