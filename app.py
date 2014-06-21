@@ -107,7 +107,7 @@ class ResetPassword:
         if connector.canResetPassword(data['login']) == True:
             salt = connector.getSalt(data['login'])
             connector.disableResetPassword(data['login'])
-			m = hashlib.sha256()
+            m = hashlib.sha256()
             m.update(salt)
             m.update(data['password'])
             password = m.hexdigest()
@@ -155,6 +155,8 @@ class Register:
     def POST(self):
         data = web.data()
         data = json.loads(data)
+        if connector.emailFree(data['email']) == False:
+            return json.dumps({'registered' : 'Email is already in use'})
         salt = ''.join(random.sample(string.ascii_letters, 8))
         connector.setSalt(data['login'], salt)
         connector.disableResetPassword(data['login'])
