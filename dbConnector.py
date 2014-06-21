@@ -11,6 +11,25 @@ class dbConnector:
     def __init__(self):
         return
     		
+    def loginFree(self, login):
+        return 0
+		
+    def emailFree(self, email):
+        return 0
+
+    def getLoginByResetKey(self, key):
+        return 0
+
+    def enableResetPassword(self, login):
+        return 0
+		
+    def addResetKey(self, login, key):
+        return 0
+    def canResetpassword(self, login):
+        return 0
+
+    def disableResetPassword(self, login):
+        return 0
     def setSalt(self, login, salt):
         conn, cursor = connect()
         try:
