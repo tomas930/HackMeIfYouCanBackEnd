@@ -159,7 +159,7 @@ class Register:
             return json.dumps({'registered' : 'Email is already in use'})
         salt = ''.join(random.sample(string.ascii_letters, 8))
         connector.setSalt(data['login'], salt)
-        connector.disableResetPassword(data['login'])
+        connector.addResetKey(data['login'], "tmp")
         m = hashlib.sha256()
         m.update(salt)
         m.update(data['password'])
