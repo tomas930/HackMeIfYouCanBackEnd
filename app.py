@@ -19,7 +19,8 @@ from dbConnector import *
 from mail import *
 import sessionControler
 from sessionControler import *
-
+import urllib2
+import cookielib
 
 # allowed methods in dbConnector 
 # getLastID()	return lastID
@@ -81,8 +82,7 @@ class Reseter:
         connector.enableResetPassword(login)
         cj = cookielib.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-        return opener.open('https://len.iem.pw.edu.pl:4443/reset.html?' + login)
-		
+        return opener.open('https://len.iem.pw.edu.pl:4443/redirect.html')
 class ResetPassword:
     def GET(self):
         data = web.data()
