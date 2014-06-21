@@ -10,7 +10,7 @@ import os
 import sqlite3
 import mail
 import json
-import crypt
+import hashlib
 import web
 import string
 import random
@@ -93,9 +93,15 @@ class ResetPassword:
         
         if data['resetKey'] == passwordReset:
             salt = connector.getSalt(login)
-            password = crypt.crypt(data['password'], salt)
-            for i in range(1, 10):
-                password = crypt.crypt(password, salt)		
+			m = hashlib.sha256()
+            m.update(salt)
+            m.update(data['password'])
+            password = m.hexdigest()
+            for i in range(1, 2):
+                m = hashlib.sha256()
+                m.update(salt)
+                m.update(data['password'])
+                password = m.hexdigest()	
             connector.updateUserPassword(data['login'], password)
             return json.dumps({'result' : True})
         else:
@@ -109,9 +115,15 @@ class Login:
         login = str(data['login'])
         password = str(data['password'])
         salt = str(connector.getSalt(login))
-        password = crypt.crypt(password, salt)
-        for i in range(1, 10):
-            password = crypt.crypt(password, salt)
+        m = hashlib.sha256()
+        m.update(salt)
+        m.update(data['password'])
+        password = m.hexdigest()
+        for i in range(1, 2):
+            m = hashlib.sha256()
+            m.update(salt)
+            m.update(data['password'])
+            password = m.hexdigest()
         logged = connector.checkPassword( login, password )
         response = {'logged' : logged}
         if logged == True:
@@ -129,11 +141,17 @@ class Register:
     def POST(self):
         data = web.data()
         data = json.loads(data)
-        salt = ''.join(random.sample(string.ascii_letters, 2))
+        salt = ''.join(random.sample(string.ascii_letters, 8))
         connector.setSalt(data['login'], salt)
-        password = crypt.crypt(data['password'], salt)
-        for i in range(1, 10):
-            password = crypt.crypt(password, salt)
+        m = hashlib.sha256()
+        m.update(salt)
+        m.update(data['password'])
+        password = m.hexdigest()
+        for i in range(1, 2):
+            m = hashlib.sha256()
+            m.update(salt)
+            m.update(data['password'])
+            password = m.hexdigest()
         result = connector.addUserToDB(data['login'], password, data['email'], data['name'], data['surname'])
         if result == True:
             sendMail(data['email'], "Welcome!", "You have been successful registered in our application. Remember, You can reset your password only with this e-mail.")
