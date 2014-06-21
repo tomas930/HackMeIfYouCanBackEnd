@@ -1,5 +1,8 @@
 import sqlite3
-
+import hashlib
+import random
+import string
+from datetime import datetime, timedelta
 database = "/home/stud/ficm/database/database.db"
 
 def connect():
@@ -11,6 +14,68 @@ class dbConnector:
     def __init__(self):
         return
 		
+    def logged(self, sessionId):
+        conn, cursor = connect()
+        com = "select * from sessions where sessionId=?"
+        cursor.execute(com, (sessionId,))
+        result = cursor.fetchone()
+        time = datetime.now()
+        conn.close()
+        if result == None:
+            return False
+        time = format(time, '%H:%M:%S')
+        if (datetime.strptime(result[3], "%H:%M:%S") - datetime.strptime(time, '%H:%M:%S') ) < timedelta(minutes=1):
+            self.killSession(sessionId)
+            return False  
+        return True
+    def updateSession(self, sessionId):
+        conn, cursor = connect()
+        expire = datetime.now() + timedelta(hours=1)
+        expire = format(expire, '%H:%M:%S')
+        try:
+            com = "update sessions set expire=\'" + str(expire) + "\' where sessionId=?"
+            cursor.execute(com, (sessionId,))
+            conn.commit()
+            conn.close()
+        except Exception:
+            conn.commit()
+            conn.close()
+            return False
+        return True
+		
+    def killSession(self, sessionId):
+        conn, cursor = connect()
+        try:
+            com = "select login from sessions where sessionId=?"
+            cursor.execute(com, (sessionId,))
+            login = cursor.fetchone() 
+            conn.commit()
+            conn.close()
+            conn, cursor = connect()
+            print login[0]  			
+            com = "delete from sessions where login=?"
+            cursor.execute(com, (str(login[0]),))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return True
+    def setSession(self, login):
+        conn, cursor = connect()
+        sessionId = ''.join(random.sample(string.ascii_letters, 24))
+        m = hashlib.sha256()
+        m.update(sessionId)
+        sessionId = m.hexdigest()
+        expire = datetime.now() + timedelta(hours=1)
+        expire = format(expire, '%H:%M:%S')
+        try:
+            com = "insert into sessions values (?,?,?,?)"
+            cursor.execute(com, (login,'true',sessionId,expire,))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return sessionId
     def emailFree(self, email):
         conn, cursor = connect()
         com = "select email from users where email=?"
@@ -45,7 +110,7 @@ class dbConnector:
         conn, cursor = connect()
         try:
             com = "insert into resetPassword values (?,?,?)"
-            cursor.execute(com, (login,key,'false'))
+            cursor.execute(com, (login,key,'false',))
         except Exception:
             return False
         conn.commit()
@@ -241,5 +306,4 @@ class dbConnector:
         return True
 if __name__ == "__main__":
     dbConnector = dbConnector()
-    dbConnector.addResetKey('test', 'dasd')
-    print dbConnector.canResetPassword("test")
+    print "test"

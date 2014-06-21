@@ -22,25 +22,10 @@ from sessionControler import *
 import urllib2
 import cookielib
 
-# allowed methods in dbConnector 
-# getLastID()	return lastID
-# addFile(self,login, userFile, extension):
-# getUserFile(self,login):	return file
-# addNote(self,noteID, login, note):	return True
-# getUserNotes(self,login):	return []
-# getUserInformation(self,login):		return info
-# checkPassword(self, login, password):		return False
-# addErrorLog(self, date, message):		return True
-# addLog( self,date, message):	return True
-# checkIfLoginIsFree(self,login):		return True
-# addUserToDB( self,login, password, email, name, surname):		return True
-
-
-#prefix = 'localhost:8457'
-
 urls = ('/notes/(.*)', 'Notes',
 '/register', 'Register',
 '/login', 'Login',
+'/logout', 'Logout',
 '/reset', 'ResetPassword',
 '/resetKey/(.*)', 'Reseter',
 '/upload', 'Upload',
@@ -50,7 +35,6 @@ urls = ('/notes/(.*)', 'Notes',
 web.config.debug = False
 app = web.application(urls, locals())
 
-#session = SessionController(app)
 connector = dbConnector()
 
 noteIDcounter = connector.getLastID()
@@ -59,23 +43,38 @@ badLoginCounter = 0
 
 class Upload:
     def GET(self):
-        return """<html><head></head><body>
-<form method="POST" enctype="multipart/form-data" action="">
-<input type="file" name="myfile" />
-<br/>
-<input type="submit" />
-</form>
-</body></html>"""
+        try:
+            if connector.logged(web.cookies().get('sessionId')) == False:
+                return web.notfound()
+            connector.updateSession(web.cookies().get('sessionId'))   
+            web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
+            return """<html><head></head><body><form method="POST" enctype="multipart/form-data" action=""><input type="file" name="myfile" /><br/><input type="submit" /></form></body></html>"""
+        except AttributeError:
+            return None
+        
 
     def POST(self):
-        x = web.input(myfile={})
-        file = open('/home/stud/ficm/database/database.db', 'w')
-        file.write(x['myfile'].file.read())
-        file.close()
-        # TODO insert page address to redirect
-        raise web.seeother('')
+        try:
+            if connector.logged(web.cookies().get('sessionId')) == False:
+                return web.notfound()
+            connector.updateSession(web.cookies().get('sessionId'))
+            web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
+            x = web.input(myfile={})
+            file = open('/home/stud/ficm/database/database.db', 'w')
+            file.write(x['myfile'].file.read())
+            file.close()
+            # TODO insert page address to redirect
+            raise web.seeother('')
+        except AttributeError:
+            return None
 
-	
+class Logout:
+    def POST(self):
+        try:
+            conncector.killSession(web.cookies().get('sessionId'))
+            return json.dumps({'result' : "true"})
+        except AttributeError:
+            return json.dumps({'result' : 'false'})		
 class Reseter:
     def GET(self,arg):
         login = connector.getLoginByResetKey(arg)
@@ -139,8 +138,8 @@ class Login:
         logged = connector.checkPassword( login, password )
         response = {'logged' : logged}
         if logged == True:
-            #session.setSession(login)
-            web.setcookie('login', login, 3600, secure=True )
+            sessionId = connector.setSession(login)
+            web.setcookie('sessionId', sessionId, 3600, secure=True )
         else:
             if badLoginCounter == 5:
                 badLoginCounter = 0
@@ -176,10 +175,24 @@ class Register:
 class Notes:
     def GET(self, arg):
         result = connector.getUserNotes(str(arg))
-        return json.dumps(result)
+        try:
+            if connector.logged(web.cookies().get('sessionId')) == False:
+                return web.notfound()
+            connector.updateSession(web.cookies().get('sessionId'))
+            web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
+            return json.dumps(result)
+        except AttributeError:
+            return web.notfound()
     def POST(self, arg):
         global noteIDcounter
         data = web.data()
+        try:    
+            if connector.logged(web.cookies().get('sessionId')) == False:
+                return web.notfound()
+            connector.updateSession(web.cookies().get('sessionId'))
+            web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
+        except AttributeError:
+            return web.notfound()     
         data = json.loads(data)
         result = connector.addNote(str(noteIDcounter), str(data['login']), str(data['text']))
         if result == True:
