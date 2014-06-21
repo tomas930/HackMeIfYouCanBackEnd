@@ -177,16 +177,17 @@ class Notes:
     def GET(self, arg):
         result = connector.getUserNotes(str(arg))
         return json.dumps(result)
-    def POST(self):
+    def POST(self, arg):
+        global noteIDcounter
         data = web.data()
-        result = connector.addNote(noteIDcounter, data['login'], data['note'])
-        response
+        data = json.loads(data)
+        result = connector.addNote(str(noteIDcounter), str(data['login']), str(data['text']))
         if result == True:
             response = {'noteID' : noteIDcounter }
             return json.dumps(response)            
         else:
             return json.dumps({ 'added' : False })
-
+        noteIDcounter += 1
 			
 def sendMail(sendTo, message, topic):
     sender = mail()
