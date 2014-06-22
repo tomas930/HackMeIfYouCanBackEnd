@@ -68,6 +68,7 @@ class dbConnector:
         sessionId = m.hexdigest()
         expire = datetime.now() + timedelta(hours=1)
         expire = format(expire, '%H:%M:%S')
+        # TODO: if zalogowany -> update session + return ID
         try:
             com = "insert into sessions values (?,?,?,?)"
             cursor.execute(com, (login,'true',sessionId,expire,))
@@ -304,6 +305,10 @@ class dbConnector:
         conn.commit()
         conn.close()
         return True
+
+    def incNoteIDCounter(self):
+        return 0
+
 if __name__ == "__main__":
     dbConnector = dbConnector()
     print "test"

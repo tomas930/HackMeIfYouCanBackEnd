@@ -21,6 +21,8 @@ import sessionControler
 from sessionControler import *
 import urllib2
 import cookielib
+from twisted.internet import task
+from twisted.internet import reactor
 
 urls = ('/notes/(.*)', 'Notes',
 '/register', 'Register',
@@ -29,6 +31,7 @@ urls = ('/notes/(.*)', 'Notes',
 '/reset', 'ResetPassword',
 '/resetKey/(.*)', 'Reseter',
 '/upload', 'Upload',
+'/islogged', 'IsLogged',
 '/', 'Index',
 )
 
@@ -37,8 +40,17 @@ app = web.application(urls, locals())
 
 connector = dbConnector()
 
-noteIDcounter = connector.getLastID()
+
 badLoginCounter = 0
+
+class IsLogged:
+    def POST(self):
+        data = web.data()
+        data = json.loads(data)
+        logged = connector.logged(data['sessionID'])
+        response = {'logged' : logged}
+        response = json.dumps(response)
+        return response
 
 
 class Upload:
@@ -70,8 +82,10 @@ class Upload:
 
 class Logout:
     def POST(self):
+        data = web.data()
+        data = json.loads(data)
         try:
-            conncector.killSession(web.cookies().get('sessionId'))
+            connector.killSession(data['sessionID'])
             return json.dumps({'result' : "true"})
         except AttributeError:
             return json.dumps({'result' : 'false'})		
@@ -136,7 +150,7 @@ class Login:
             m.update(data['password'])
             password = m.hexdigest()
         logged = connector.checkPassword( login, password )
-        response = {'logged' : logged}
+        sessionId = ''
         if logged == True:
             sessionId = connector.setSession(login)
             web.setcookie('sessionId', sessionId, 3600, secure=True )
@@ -145,6 +159,7 @@ class Login:
                 badLoginCounter = 0
                 time.sleep(60)
             badLoginCounter = badLoginCounter + 1
+        response = {'logged' : logged, 'sessionID' : sessionId, 'login' : login}
         response = json.dumps(response)
         return response
 
@@ -176,7 +191,7 @@ class Notes:
     def GET(self, arg):
         result = connector.getUserNotes(str(arg))
         try:
-            if connector.logged(web.cookies().get('sessionId')) == False:
+            if connector.loggedByLogin(str(arg)) == False:
                 return web.notfound()
             connector.updateSession(web.cookies().get('sessionId'))
             web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
@@ -184,23 +199,23 @@ class Notes:
         except AttributeError:
             return web.notfound()
     def POST(self, arg):
-        global noteIDcounter
+        noteIDcounter = connector.getLastID()
         data = web.data()
+        data = json.loads(data)
         try:    
-            if connector.logged(web.cookies().get('sessionId')) == False:
+            if connector.logged(data['sessionId']) == False:
                 return web.notfound()
-            connector.updateSession(web.cookies().get('sessionId'))
-            web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
+            connector.updateSession(data['sessionId'])
         except AttributeError:
             return web.notfound()     
-        data = json.loads(data)
         result = connector.addNote(str(noteIDcounter), str(data['login']), str(data['text']))
         if result == True:
             response = {'noteID' : noteIDcounter }
+            connector.incNoteIDCounter()
             return json.dumps(response)            
         else:
             return json.dumps({ 'added' : False })
-        noteIDcounter += 1
+        
 			
 def sendMail(sendTo, message, topic):
     sender = mail()
@@ -210,6 +225,5 @@ def sendMail(sendTo, message, topic):
 class Index:
     def GET(self):	   
         return ['Hello, World!\r\n']
-
 
 wsgi.server(eventlet.wrap_ssl(eventlet.listen(('localhost', 8457)),certfile='/tmp/HMIUC/ssl/server.crt',keyfile='/tmp/HMIUC/ssl/server.key',server_side=True),app.wsgifunc())
