@@ -68,14 +68,20 @@ class dbConnector:
         sessionId = m.hexdigest()
         expire = datetime.now() + timedelta(hours=1)
         expire = format(expire, '%H:%M:%S')
-        # TODO: if zalogowany -> update session + return ID
+        com = "select sessionId from sessions where login=?"
+        cursor.execute(com, (login,))
+        result = cursor.fetchone()
+        if result != None:
+            self.updateSession(result[0])
+            return result[0]
+        conn.commit()
+        conn.close()
+        conn, cursor = connect()
         try:
             com = "insert into sessions values (?,?,?,?)"
             cursor.execute(com, (login,'true',sessionId,expire,))
         except Exception:
-            com = "update sessions set sessionId=?, expire=?, logged=? where login=?"
-            cursor.execute(com, (sessionId,expire,'true',login,))
-            #return False
+            return False
         conn.commit()
         conn.close()
         return sessionId
@@ -221,7 +227,7 @@ class dbConnector:
             return False
         conn.commit()
         conn.close()
-        noteIDcounter += 1
+        incNoteIDCounter()
         return True
 	
     def updateUserPassword(self, login, password):
@@ -317,7 +323,24 @@ class dbConnector:
         return True
 
     def incNoteIDCounter(self):
-        return 0
+        conn, cursor = connect()
+        com = "select value from noteId where idCounter=\"counter\";"
+        result = ""
+        try:
+            cursor.execute(com,)
+            result = cursor.fetchone()
+            result = int(result[0])
+            result += 1
+            conn.commit()
+            conn.close()
+            conn, cursor = connect()
+            com = "update noteId set value=? where idCounter=\'counter\'"
+            cursor.execute(com, (result,))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return result
 
 if __name__ == "__main__":
     dbConnector = dbConnector()
