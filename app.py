@@ -194,7 +194,7 @@ class Notes:
             if connector.loggedByLogin(str(arg)) == False:
                 return web.notfound()
             connector.updateSession(web.cookies().get('sessionId'))
-            web.setcookie('sessionId', web.cookies().get('sessionId'), 3600, secure=True )
+            
             return json.dumps(result)
         except AttributeError:
             return web.notfound()
@@ -203,9 +203,9 @@ class Notes:
         data = web.data()
         data = json.loads(data)
         try:    
-            if connector.logged(data['sessionId']) == False:
+            if connector.logged(data['sessionID']) == False:
                 return web.notfound()
-            connector.updateSession(data['sessionId'])
+            connector.updateSession(data['sessionID'])
         except AttributeError:
             return web.notfound()     
         result = connector.addNote(str(noteIDcounter), str(data['login']), str(data['text']))
