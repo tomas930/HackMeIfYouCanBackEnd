@@ -52,7 +52,7 @@ class dbConnector:
             conn.commit()
             conn.close()
             conn, cursor = connect()
-            print login[0]  			
+            # print login[0]  			
             com = "delete from sessions where login=?"
             cursor.execute(com, (str(login[0]),))
         except Exception:
@@ -68,20 +68,14 @@ class dbConnector:
         sessionId = m.hexdigest()
         expire = datetime.now() + timedelta(hours=1)
         expire = format(expire, '%H:%M:%S')
-        com = "select sessionId from sessions where login=?"
-        cursor.execute(com, (login,))
-        result = cursor.fetchone()
-        if result != None:
-            self.updateSession(result[0])
-            return result[0]
-        conn.commit()
-        conn.close()
-        conn, cursor = connect()
+        # TODO: if zalogowany -> update session + return ID
         try:
             com = "insert into sessions values (?,?,?,?)"
             cursor.execute(com, (login,'true',sessionId,expire,))
         except Exception:
-            return False
+            com = "update sessions set sessionId=?, expire=?, logged=? where login=?"
+            cursor.execute(com, (sessionId,expire,'true',login,))
+            #return False
         conn.commit()
         conn.close()
         return sessionId
@@ -121,7 +115,9 @@ class dbConnector:
             com = "insert into resetPassword values (?,?,?)"
             cursor.execute(com, (login,key,'false',))
         except Exception:
-            return False
+            com = "update resetPassword set resetKey=?, canReset=\'false\' where login=?"
+            cursor.execute(com, (key, login))
+            #return False
         conn.commit()
         conn.close()
         return True
@@ -163,16 +159,24 @@ class dbConnector:
         cursor.execute(com, (login,))
         result = cursor.fetchone()
         conn.close()
-        print result[0]		
-        return result[0]
+        # print result[0]		
+        if result == None:
+            return None
+        else:
+            return result[0]
         
 		
     def getLastID(self):
         conn, cursor = connect()
-        cursor.execute("select value from noteId where idCounter=\'counter\';")
-        id = cursor.fetchone()
+        cursor.execute("select id from notes;")
+        ids = cursor.fetchall()
+        lastID = 0
         conn.close()
-        return id[0]
+        for id in ids:
+            tmp = id[0]
+            if tmp > lastID:
+                lastID = tmp
+        return lastID
 		
     def addFile(self,login, userFile, extension):
         conn, cursor = connect()
@@ -249,9 +253,12 @@ class dbConnector:
 	
     def getUserInformation(self,login):
         conn, cursor = connect()
-        com = "select * from users where login=?;"
-        cursor.execute(com, (login,))
-        info = cursor.fetchone()
+        try:
+            com = "select * from users where login=?;"
+            cursor.execute(com, (login,))
+            info = cursor.fetchone()
+        except Exception:
+            return ''
         conn.close()
         return info
 	
@@ -310,25 +317,8 @@ class dbConnector:
         return True
 
     def incNoteIDCounter(self):
-        conn, cursor = connect()
-        com = "select value from noteId where idCounter=\"counter\";"
-        result = ""
-        try:
-            cursor.execute(com,)
-            result = cursor.fetchone()
-            result = int(result[0])
-            result += 1
-            conn.commit()
-            conn.close()
-            conn, cursor = connect()
-            com = "update noteId set value=? where idCounter=\'counter\'"
-            cursor.execute(com, (result,))
-        except Exception:
-            return False
-        conn.commit()
-        conn.close()
-        return result
+        return 0
 
 if __name__ == "__main__":
     dbConnector = dbConnector()
-    print dbConnector.getLastID()
+    # print "test"

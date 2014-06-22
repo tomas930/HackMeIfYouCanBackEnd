@@ -28,7 +28,7 @@ urls = ('/notes/(.*)', 'Notes',
 '/register', 'Register',
 '/login', 'Login',
 '/logout', 'Logout',
-'/reset', 'ResetPassword',
+'/reset/(.*)', 'ResetPassword',
 '/resetKey/(.*)', 'Reseter',
 '/upload', 'Upload',
 '/islogged', 'IsLogged',
@@ -91,7 +91,9 @@ class Logout:
             return json.dumps({'result' : 'false'})		
 class Reseter:
     def GET(self,arg):
-        login = connector.getLoginByResetKey(arg)
+        arg = arg.split(";")
+        login = connector.getLoginByResetKey(str(arg[1]))
+        print login
         connector.enableResetPassword(login)
         cj = cookielib.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
@@ -100,18 +102,22 @@ class ResetPassword:
     def GET(self, arg):
         login = arg
         info = connector.getUserInformation(login)
+        if(info == None):
+            response = {'error' : 'false'}
+            response = json.dumps(response)
+            return response
         passwordReset = ''.join(random.sample(string.ascii_letters, 24))
         m = hashlib.sha256()
         m.update(passwordReset)
         passwordReset = m.hexdigest()
-        passwordReset = "https://volt.iem.pw.edu.pl:7777/resetKey/" + passwordReset
         connector.addResetKey(login, passwordReset)
+        passwordReset = "https://volt.iem.pw.edu.pl:7777/resetKey/" + info[0] + ";" +passwordReset
         sendMail(info[2], 'Password reset', 'To reset your password please click this link:\n' + passwordReset)
-        res.status = '200 OK'
-        res.cont = 'text/plain'
-        res.body = '0'
-        return 0
-    def POST(self):
+        response = {'error' : 'OK'}
+        response = json.dumps(response)
+        return response
+
+    def POST(self, arg):
         data = web.data()
         data = json.loads(data)
         
@@ -140,6 +146,10 @@ class Login:
         login = str(data['login'])
         password = str(data['password'])
         salt = str(connector.getSalt(login))
+        if salt == 'None':
+            response = {'logged' : False}
+            response = json.dumps(response)
+            return response
         m = hashlib.sha256()
         m.update(salt)
         m.update(data['password'])
@@ -215,7 +225,7 @@ class Notes:
             return json.dumps(response)            
         else:
             return json.dumps({ 'added' : False })
-        
+
 			
 def sendMail(sendTo, message, topic):
     sender = mail()
