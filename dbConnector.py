@@ -68,7 +68,15 @@ class dbConnector:
         sessionId = m.hexdigest()
         expire = datetime.now() + timedelta(hours=1)
         expire = format(expire, '%H:%M:%S')
-        # TODO: if zalogowany -> update session + return ID
+        com = "select sessionId from sessions where login=?"
+        cursor.execute(com, (login,))
+        result = cursor.fetchone()
+        if result != None:
+            self.updateSession(result[0])
+            return result[0]
+        conn.commit()
+        conn.close()
+        conn, cursor = connect()
         try:
             com = "insert into sessions values (?,?,?,?)"
             cursor.execute(com, (login,'true',sessionId,expire,))
@@ -161,15 +169,10 @@ class dbConnector:
 		
     def getLastID(self):
         conn, cursor = connect()
-        cursor.execute("select id from notes;")
-        ids = cursor.fetchall()
-        lastID = 0
+        cursor.execute("select value from noteId where idCounter=\'counter\';")
+        id = cursor.fetchone()
         conn.close()
-        for id in ids:
-            tmp = id[0]
-            if tmp > lastID:
-                lastID = tmp
-        return lastID
+        return id[0]
 		
     def addFile(self,login, userFile, extension):
         conn, cursor = connect()
@@ -307,8 +310,25 @@ class dbConnector:
         return True
 
     def incNoteIDCounter(self):
-        return 0
+        conn, cursor = connect()
+        com = "select value from noteId where idCounter=\"counter\";"
+        result = ""
+        try:
+            cursor.execute(com,)
+            result = cursor.fetchone()
+            result = int(result[0])
+            result += 1
+            conn.commit()
+            conn.close()
+            conn, cursor = connect()
+            com = "update noteId set value=? where idCounter=\'counter\'"
+            cursor.execute(com, (result,))
+        except Exception:
+            return False
+        conn.commit()
+        conn.close()
+        return result
 
 if __name__ == "__main__":
     dbConnector = dbConnector()
-    print "test"
+    print dbConnector.getLastID()
