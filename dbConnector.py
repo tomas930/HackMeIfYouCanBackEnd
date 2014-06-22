@@ -293,7 +293,7 @@ class dbConnector:
     def addErrorLog(self, date, message):
         conn, cursor = connect()
         try:
-            com = "insert into aplicationLogs values(? ,?);"
+            com = "insert into aplicationErrorLogs values(? ,?);"
             cursor.execute(com, (date, message,))
         except sqlite3.IntegrityError:
             return False
@@ -304,7 +304,7 @@ class dbConnector:
     def addLog( self,date, message):
         conn, cursor = connect()
         try:
-            com = "insert into aplicationErrorLogs values(?, ?);"
+            com = "insert into aplicationLogs values(?, ?);"
             cursor.execute(com, (date, message,))
         except sqlite3.IntegrityError:
             return False
