@@ -200,6 +200,7 @@ class Register:
 class Notes:
     def GET(self, arg):
         result = connector.getUserNotes(str(arg))
+        print result
         try:
             if connector.loggedByLogin(str(arg)) == False:
                 return web.notfound()

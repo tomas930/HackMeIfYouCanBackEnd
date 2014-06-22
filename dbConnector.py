@@ -28,6 +28,20 @@ class dbConnector:
             self.killSession(sessionId)
             return False  
         return True
+    def loggedByLogin(self, login):
+        conn, cursor = connect()
+        com = "select * from sessions where login=?"
+        cursor.execute(com, (login,))
+        result = cursor.fetchone()
+        time = datetime.now()
+        conn.close()
+        if result == None:
+            return False
+        time = format(time, '%H:%M:%S')
+        if (datetime.strptime(result[3], "%H:%M:%S") - datetime.strptime(time, '%H:%M:%S') ) < timedelta(minutes=1):
+            self.killSession(result[2])
+            return False  
+        return True
     def updateSession(self, sessionId):
         conn, cursor = connect()
         expire = datetime.now() + timedelta(hours=1)
@@ -227,7 +241,7 @@ class dbConnector:
             return False
         conn.commit()
         conn.close()
-        incNoteIDCounter()
+        self.incNoteIDCounter()
         return True
 	
     def updateUserPassword(self, login, password):
