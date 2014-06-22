@@ -188,15 +188,10 @@ class dbConnector:
 		
     def getLastID(self):
         conn, cursor = connect()
-        cursor.execute("select id from notes;")
-        ids = cursor.fetchall()
-        lastID = 0
-        conn.close()
-        for id in ids:
-            tmp = id[0]
-            if tmp > lastID:
-                lastID = tmp
-        return lastID
+        cursor.execute("select value from noteID where idCounter=\"counter\";")
+        id = cursor.fetchall()
+        id = str(id[0][0])
+        return id
 		
     def addFile(self,login, userFile, extension):
         conn, cursor = connect()
@@ -232,8 +227,11 @@ class dbConnector:
             file.close()
             return file
     
-    def addNote(self,noteID, login, note):
+    def addNote(self, login, note):
         conn, cursor = connect()
+        self.incNoteIDCounter()
+        noteID = self.getLastID()
+        print noteID, login, note
         try:
             com = "insert into notes values(?, ?, ?);"
             cursor.execute(com, (noteID, login, note,))
@@ -241,7 +239,6 @@ class dbConnector:
             return False
         conn.commit()
         conn.close()
-        self.incNoteIDCounter()
         return True
 	
     def updateUserPassword(self, login, password):

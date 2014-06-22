@@ -210,7 +210,6 @@ class Notes:
         except AttributeError:
             return web.notfound()
     def POST(self, arg):
-        noteIDcounter = connector.getLastID()
         data = web.data()
         data = json.loads(data)
         try:    
@@ -219,10 +218,9 @@ class Notes:
             connector.updateSession(data['sessionID'])
         except AttributeError:
             return web.notfound()     
-        result = connector.addNote(str(noteIDcounter), str(data['login']), str(data['text']))
+        result = connector.addNote(str(data['login']), str(data['text']))
         if result == True:
-            response = {'noteID' : noteIDcounter }
-            connector.incNoteIDCounter()
+            response = {'added' : True }
             return json.dumps(response)            
         else:
             return json.dumps({ 'added' : False })
